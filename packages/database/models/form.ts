@@ -10,7 +10,7 @@ export const formFieldTypeEnum = pgEnum("form_field_type", ["text", "email", "se
 export const formsTable = pgTable("forms", {
     id: uuid("id").primaryKey().defaultRandom(),
     slug: varchar("slug").notNull().unique(),
-    title: varchar("title").notNull(),
+    title: varchar("title").notNull(),  
     description: text("description"),
     creatorId: uuid("creator_id").references(() => usersTable.id, { onDelete: "cascade" }),
     status: formStatusEnum("status").default("draft"),
@@ -39,7 +39,7 @@ export const formFieldsTable = pgTable("form_fields", {
 export const formResponsesTable = pgTable("form_responses", {
     id: uuid("id").primaryKey().defaultRandom(),
     formId: uuid("form_id").references(() => formsTable.id, { onDelete: "cascade" }),
-    answers: jsonb("answers"),
+    answers: jsonb("answers").notNull().default("{}"),
     respondentEmail: varchar("respondent_email"),
     submittedAt: timestamp("submitted_at").defaultNow(),
     deletedAt: timestamp("deleted_at"),
@@ -48,7 +48,7 @@ export const formResponsesTable = pgTable("form_responses", {
 export const userSessionsTable = pgTable("user_sessions", {
     id: uuid("id").primaryKey().defaultRandom(),
     userId: uuid("user_id").references(() => usersTable.id, { onDelete: "cascade" }),
-    token: varchar("token").notNull(),
+    token: text("token").notNull().unique(),
     expiresAt: timestamp("expires_at").notNull(),
     deletedAt: timestamp("deleted_at"),
     isActive: boolean("is_active").default(true)
