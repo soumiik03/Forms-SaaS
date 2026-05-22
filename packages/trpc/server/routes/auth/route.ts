@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { router, publicProcedure } from "../../trpc"
+import { router, publicProcedure ,protectedProcedure} from "../../trpc"
 import { db, usersTable, userSessionsTable } from "@repo/database"
 import { hashPassword, verifyPassword, generateSessionToken } from "@repo/services/auth"
 import { eq } from "drizzle-orm"
@@ -73,4 +73,32 @@ export const authRouter = router({
       })
       return { token }
     }),
+
+  logout: protectedProcedure
+    .meta({ openapi: { method: "POST", path: "/auth/logout", tags: TAGS } })
+    .input(z.object({}))
+    .output(z.object({ message: z.string() }))
+    .mutation(async ({ ctx }) => {
+      await db.delete(userSessionsTable)
+        .where(eq(userSessionsTable.token, ctx.token!))
+      return { message: "Logged out successfully" }
+    }),
+
+me: protectedProcedure
+  .meta({ openapi: { method: "GET", path: "/auth/me", tags: TAGS } })
+  .input(z.object({}))
+  .output(z.object({
+    id: z.string(),
+    fullName: z.string(),
+    email: z.string(),
+    plan: z.string().nullable(),
+  }))
+  .query(async ({ ctx }) => {
+    return {
+      id: ctx.user.id,
+      fullName: ctx.user.fullName,
+      email: ctx.user.email,
+      plan: ctx.user.plan ?? null,
+    }
+  }),
 })

@@ -1,6 +1,7 @@
 import express from "express";
 import { logger } from "@repo/logger";
 import cors from "cors";
+import rateLimit from "express-rate-limit";
 
 import * as trpcExpress from "@trpc/server/adapters/express";
 import { generateOpenApiDocument, createOpenApiExpressMiddleware } from "trpc-to-openapi";
@@ -24,6 +25,12 @@ if (env.NODE_ENV !== "prod") {
     }),
   );
 }
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, 
+  max: 100, 
+  message: "Too many requests, please try again later.",
+});
+app.use(limiter);
 
 app.use(express.json());
 
