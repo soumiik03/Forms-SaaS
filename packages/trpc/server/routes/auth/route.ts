@@ -1,8 +1,8 @@
 import { z } from "zod"
-import { router, publicProcedure, protectedProcedure } from "../../trpc"
+import { router, publicProcedure } from "../../trpc"
 import { db, usersTable, userSessionsTable } from "@repo/database"
 import { hashPassword, verifyPassword, generateSessionToken } from "@repo/services/auth"
-import { eq, and, gt } from "drizzle-orm"
+import { eq } from "drizzle-orm"
 import { TRPCError } from "@trpc/server"
 
 const TAGS = ["Authentication"]
@@ -57,10 +57,6 @@ export const authRouter = router({
       const user = users[0]
 
       // Verify password
-      //const valid = await verifyPassword(input.password, user.passwordHash)
-      if (!user.passwordHash) {
-        throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid email or password" })
-      }
       const valid = await verifyPassword(input.password, user.passwordHash)
 
       if (!valid) {
@@ -77,30 +73,4 @@ export const authRouter = router({
       })
       return { token }
     }),
-  logout: protectedProcedure
-      .meta({ openapi: { method: "POST", path: "/auth/logout", tags: TAGS } })
-      .input(z.object({}))
-      .output(z.object({ message: z.string() }))
-      .mutation(async ({ ctx }) => {
-      
-      await db.delete(userSessionsTable)
-        .where(eq(userSessionsTable.token, ctx.token))
-    
-    return { message: "Logged out successfully" }
-  }),
-  me: protectedProcedure
-  .meta({ openapi: { method: "GET", path: "/auth/me", tags: TAGS } })
-  .input(z.object({}))
-  .output(z.object({
-    id: z.string(),
-    fullName: z.string(),
-    email: z.string(),
-  }))
-  .query(async ({ ctx }) => {
-    return {
-      id: ctx.user.id,
-      fullName: ctx.user.fullName,
-      email: ctx.user.email,
-    }
-  }),
 })
