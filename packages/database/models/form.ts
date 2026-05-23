@@ -21,6 +21,7 @@ export const formsTable = pgTable("forms", {
     deletedAt: timestamp("deleted_at"),
     updatedAt: timestamp("updated_at").$onUpdate(() => new Date()),
     submissionCount: integer("submission_count").default(0),
+    viewCount: integer("view_count").default(0),
     isActive: boolean("is_active").default(true)
 })
 export const formFieldsTable = pgTable("form_fields", {
@@ -31,6 +32,7 @@ export const formFieldsTable = pgTable("form_fields", {
     required: boolean("required").default(false),
     order: integer("order"),
     options: jsonb("options"),
+    placeholder: text("placeholder"),
     validation: jsonb("validation"),
     deletedAt: timestamp("deleted_at"),
     isActive: boolean("is_active").default(true),
@@ -42,6 +44,7 @@ export const formResponsesTable = pgTable("form_responses", {
     formId: uuid("form_id").references(() => formsTable.id, { onDelete: "cascade" }),
     answers: jsonb("answers").notNull().default("{}"),
     respondentEmail: varchar("respondent_email"),
+    respondentName: varchar("respondent_name"),
     submittedAt: timestamp("submitted_at").defaultNow(),
     deletedAt: timestamp("deleted_at"),
     isActive: boolean("is_active").default(true)
