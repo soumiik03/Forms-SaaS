@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import "./global.css";
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Formulate — Build Forms That Convert",
