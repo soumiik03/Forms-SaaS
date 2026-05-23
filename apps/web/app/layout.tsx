@@ -1,32 +1,26 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
-import "./globals.css";
-import { GlobalProviders } from "~/providers/global";
-
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-});
+import "./global.css";
 
 export const metadata: Metadata = {
-  title: "Streamyst",
-  description: "Media Forwarding",
+  title: "Formulate — Build Forms That Convert",
+  description:
+    "Formulate is the wildly powerful form builder for professionals. Drag, drop, and deploy beautiful forms with logic, analytics, and integrations — in minutes.",
+  keywords: ["form builder", "SaaS", "drag and drop", "form analytics", "no-code"],
+  openGraph: {
+    title: "Formulate — Build Forms That Convert",
+    description: "The professional-grade form builder. No code required.",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="en" className="dark">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <GlobalProviders>{children}</GlobalProviders>
-      </body>
+    <html lang="en">
+      <body>{children}</body>
     </html>
   );
 }

@@ -17,7 +17,6 @@ export const responseRouter = router({
     }))
     .output(z.object({ message: z.string() }))
     .mutation(async ({ input }) => {
-      // Find form by slug
       const form = await db.select().from(formsTable)
         .where(and(
           eq(formsTable.slug, input.formSlug),
@@ -28,12 +27,10 @@ export const responseRouter = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "Form not found" })
       }
 
-      // Check form is published
       if (form[0].status !== "published") {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Form is not published" })
       }
 
-      // Fetch all required fields
       const requiredFields = await db.select().from(formFieldsTable)
         .where(and(
           eq(formFieldsTable.formId, form[0].id),
@@ -41,7 +38,6 @@ export const responseRouter = router({
           eq(formFieldsTable.isActive, true)
         ))
 
-      // Validate required fields have answers
       for (const field of requiredFields) {
         const answer = input.answers[field.id]
         if (answer === undefined || answer === null || answer === "") {
@@ -52,7 +48,6 @@ export const responseRouter = router({
         }
       }
 
-      // Insert response
       await db.insert(formResponsesTable).values({
         formId: form[0].id,
         answers: input.answers,
@@ -60,7 +55,6 @@ export const responseRouter = router({
         respondentName: input.respondentName,
       })
 
-      // Increment submission count atomically
       await db.update(formsTable)
         .set({ submissionCount: sql`${formsTable.submissionCount} + 1` })
         .where(eq(formsTable.id, form[0].id))
@@ -73,7 +67,6 @@ export const responseRouter = router({
     .input(z.object({ formId: z.string() }))
     .output(z.array(z.any()))
     .query(async ({ ctx, input }) => {
-      // Verify ownership
       const form = await db.select().from(formsTable)
         .where(and(
           eq(formsTable.id, input.formId),
@@ -84,7 +77,6 @@ export const responseRouter = router({
         throw new TRPCError({ code: "FORBIDDEN", message: "Not your form" })
       }
 
-      // Return responses newest first
       return db.select().from(formResponsesTable)
         .where(eq(formResponsesTable.formId, input.formId))
         .orderBy(desc(formResponsesTable.submittedAt))
@@ -99,7 +91,6 @@ export const responseRouter = router({
       completionRate: z.number(),
     }))
     .query(async ({ ctx, input }) => {
-      // Verify ownership
       const form = await db.select().from(formsTable)
         .where(and(
           eq(formsTable.id, input.formId),
@@ -113,7 +104,6 @@ export const responseRouter = router({
       const totalResponses = form[0].submissionCount ?? 0
       const totalViews = form[0].viewCount ?? 0
 
-      // Avoid division by zero
       const completionRate = totalViews > 0
         ? Math.round((totalResponses / totalViews) * 100)
         : 0
