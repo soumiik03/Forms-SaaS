@@ -23,17 +23,18 @@ export const responseRouter = router({
           eq(formsTable.isActive, true)
         )).limit(1)
 
-      if (form.length === 0) {
+      const foundForm = form[0]
+      if (!foundForm) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Form not found" })
       }
 
-      if (form[0].status !== "published") {
+      if (foundForm.status !== "published") {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Form is not published" })
       }
 
       const requiredFields = await db.select().from(formFieldsTable)
         .where(and(
-          eq(formFieldsTable.formId, form[0].id),
+          eq(formFieldsTable.formId, foundForm.id),
           eq(formFieldsTable.required, true),
           eq(formFieldsTable.isActive, true)
         ))
@@ -49,7 +50,7 @@ export const responseRouter = router({
       }
 
       await db.insert(formResponsesTable).values({
-        formId: form[0].id,
+        formId: foundForm.id,
         answers: input.answers,
         respondentEmail: input.respondentEmail,
         respondentName: input.respondentName,
@@ -57,7 +58,7 @@ export const responseRouter = router({
 
       await db.update(formsTable)
         .set({ submissionCount: sql`${formsTable.submissionCount} + 1` })
-        .where(eq(formsTable.id, form[0].id))
+        .where(eq(formsTable.id, foundForm.id))
 
       return { message: "Response submitted successfully" }
     }),
@@ -97,12 +98,13 @@ export const responseRouter = router({
           eq(formsTable.creatorId, ctx.user.id)
         )).limit(1)
 
-      if (form.length === 0) {
+      const foundForm = form[0]
+      if (!foundForm) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Not your form" })
       }
 
-      const totalResponses = form[0].submissionCount ?? 0
-      const totalViews = form[0].viewCount ?? 0
+      const totalResponses = foundForm.submissionCount ?? 0
+      const totalViews = foundForm.viewCount ?? 0
 
       const completionRate = totalViews > 0
         ? Math.round((totalResponses / totalViews) * 100)

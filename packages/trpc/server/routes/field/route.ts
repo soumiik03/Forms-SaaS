@@ -50,7 +50,11 @@ export const fieldRouter = router({
         validation: input.validation,
       }).returning()
 
-      return newField[0]
+      const result = newField[0]
+      if (!result) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create field" })
+      }
+      return result
     }),
 
   updateField: protectedProcedure
@@ -61,17 +65,18 @@ export const fieldRouter = router({
       const field = await db.select().from(formFieldsTable)
         .where(eq(formFieldsTable.id, input.fieldId)).limit(1)
 
-      if (field.length === 0) {
+      const existingField = field[0]
+      if (!existingField) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Field not found" })
       }
 
-      if (!field[0].formId) {
+      if (!existingField.formId) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Field has no associated form" })
       }
 
       const form = await db.select().from(formsTable)
         .where(and(
-          eq(formsTable.id, field[0].formId),
+          eq(formsTable.id, existingField.formId),
           eq(formsTable.creatorId, ctx.user.id)
         )).limit(1)
 
@@ -92,7 +97,11 @@ export const fieldRouter = router({
         .where(eq(formFieldsTable.id, input.fieldId))
         .returning()
 
-      return updatedField[0]
+      const result = updatedField[0]
+      if (!result) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Field not found" })
+      }
+      return result
     }),
 
   deleteField: protectedProcedure
@@ -103,17 +112,18 @@ export const fieldRouter = router({
       const field = await db.select().from(formFieldsTable)
         .where(eq(formFieldsTable.id, input.fieldId)).limit(1)
 
-      if (field.length === 0) {
+      const existingField = field[0]
+      if (!existingField) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Field not found" })
       }
 
-      if (!field[0].formId) {
+      if (!existingField.formId) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Field has no associated form" })
       }
 
       const form = await db.select().from(formsTable)
         .where(and(
-          eq(formsTable.id, field[0].formId),
+          eq(formsTable.id, existingField.formId),
           eq(formsTable.creatorId, ctx.user.id)
         )).limit(1)
 

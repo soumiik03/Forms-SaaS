@@ -1,19 +1,18 @@
-import { z } from "zod"
-import { router, publicProcedure, protectedProcedure } from "../../trpc"
-import { db, formsTable } from "@repo/database"
-import { eq, and } from "drizzle-orm"
-import { TRPCError } from "@trpc/server"
-import { nanoid } from "nanoid"
+import { z } from "zod";
+import { TRPCError } from "@trpc/server";
+import { router, publicProcedure, protectedProcedure } from "../../trpc";
+import {
+  createForm,
+  getMyForms,
+  updateForm,
+  publishForm,
+  unpublishForm,
+  deleteForm,
+  getFormBySlug,
+  getPublicForms,
+} from "@repo/services/form";
 
-const TAGS = ["Forms"]
-
-const generateSlug = (title: string) => {
-  const base = title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-  return `${base}-${nanoid(6)}`
-}
+const TAGS = ["Forms"];
 
 const formOutputSchema = z.object({
   id: z.string(),
@@ -22,122 +21,88 @@ const formOutputSchema = z.object({
   status: z.string().nullable(),
   visibility: z.string().nullable(),
   createdAt: z.date().nullable(),
-})
+});
+
+const formNotFound = () =>
+  new TRPCError({ code: "NOT_FOUND", message: "Form not found" });
 
 export const formRouter = router({
   create: protectedProcedure
     .meta({ openapi: { method: "POST", path: "/forms", tags: TAGS } })
-    .input(z.object({
-      title: z.string().min(2).max(200),
-      description: z.string().max(500).optional()
-    }))
+    .input(
+      z.object({
+        title: z.string().min(2).max(200),
+        description: z.string().max(500).optional(),
+      })
+    )
     .output(formOutputSchema)
-    .mutation(async ({ input, ctx }) => {
-      const slug = generateSlug(input.title)
-      const newForm = await db.insert(formsTable).values({
-        title: input.title,
-        description: input.description,
-        slug,
-        creatorId: ctx.user.id
-      }).returning()
-      return newForm[0]
-    }),
+    .mutation(({ input, ctx }) => createForm(ctx.user.id, input)),
 
   getMyForms: protectedProcedure
     .meta({ openapi: { method: "GET", path: "/forms/my", tags: TAGS } })
     .input(z.object({}))
-    .output(z.array(z.object({
-      id: z.string(),
-      title: z.string(),
-      description: z.string().nullable(),
-      slug: z.string(),
-      status: z.string().nullable(),
-      visibility: z.string().nullable(),
-      submissionCount: z.number().nullable(),
-      createdAt: z.date().nullable(),
-      updatedAt: z.date().nullable(),
-    })))
-    .query(async ({ ctx }) => {
-      return db.select().from(formsTable)
-        .where(and(
-          eq(formsTable.creatorId, ctx.user.id),
-          eq(formsTable.isActive, true)
-        ))
-    }),
+    .output(
+      z.array(
+        z.object({
+          id: z.string(),
+          title: z.string(),
+          description: z.string().nullable(),
+          slug: z.string(),
+          status: z.string().nullable(),
+          visibility: z.string().nullable(),
+          submissionCount: z.number().nullable(),
+          createdAt: z.date().nullable(),
+          updatedAt: z.date().nullable(),
+        })
+      )
+    )
+    .query(({ ctx }) => getMyForms(ctx.user.id)),
 
   update: protectedProcedure
     .meta({ openapi: { method: "PUT", path: "/forms/{id}", tags: TAGS } })
-    .input(z.object({
-      id: z.string(),
-      title: z.string().min(2).max(200).optional(),
-      description: z.string().max(500).optional(),
-      accentColor: z.string().optional(),
-      successMessage: z.string().optional()
-    }))
+    .input(
+      z.object({
+        id: z.string(),
+        title: z.string().min(2).max(200).optional(),
+        description: z.string().max(500).optional(),
+        accentColor: z.string().optional(),
+        successMessage: z.string().optional(),
+      })
+    )
     .output(formOutputSchema)
     .mutation(async ({ input, ctx }) => {
-      const updated = await db.update(formsTable)
-        .set({
-          ...(input.title && { title: input.title }),
-          ...(input.description && { description: input.description }),
-          ...(input.accentColor && { accentColor: input.accentColor }),
-          ...(input.successMessage && { successMessage: input.successMessage }),
-        })
-        .where(and(
-          eq(formsTable.id, input.id),
-          eq(formsTable.creatorId, ctx.user.id),
-          eq(formsTable.isActive, true)
-        ))
-        .returning()
-
-      if (updated.length === 0) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Form not found" })
-      }
-
-      return updated[0]
+      const form = await updateForm(ctx.user.id, input);
+      if (!form) throw formNotFound();
+      return form;
     }),
 
   publish: protectedProcedure
-    .meta({ openapi: { method: "PATCH", path: "/forms/{id}/publish", tags: TAGS } })
-    .input(z.object({
-      id: z.string(),
-      visibility: z.enum(["public", "unlisted"])
-    }))
+    .meta({
+      openapi: { method: "PATCH", path: "/forms/{id}/publish", tags: TAGS },
+    })
+    .input(
+      z.object({
+        id: z.string(),
+        visibility: z.enum(["public", "unlisted"]),
+      })
+    )
     .output(formOutputSchema)
     .mutation(async ({ input, ctx }) => {
-      const updated = await db.update(formsTable)
-        .set({ status: "published", visibility: input.visibility })
-        .where(and(
-          eq(formsTable.id, input.id),
-          eq(formsTable.creatorId, ctx.user.id)
-        ))
-        .returning()
-
-      if (updated.length === 0) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Form not found" })
-      }
-
-      return updated[0]
+      const form = await publishForm(ctx.user.id, input);
+      if (!form) throw formNotFound();
+      return form;
     }),
 
   unpublish: protectedProcedure
-    .meta({ openapi: { method: "PATCH", path: "/forms/{id}/unpublish", tags: TAGS } })
+    .meta({
+      openapi: { method: "PATCH", path: "/forms/{id}/unpublish", tags: TAGS },
+    })
     .input(z.object({ id: z.string() }))
     .output(formOutputSchema)
     .mutation(async ({ input, ctx }) => {
-      const updated = await db.update(formsTable)
-        .set({ status: "draft" })
-        .where(and(
-          eq(formsTable.id, input.id),
-          eq(formsTable.creatorId, ctx.user.id)
-        ))
-        .returning()
-
-      if (updated.length === 0) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Form not found" })
-      }
-
-      return updated[0]
+      const form = await unpublishForm(ctx.user.id, input.id);
+      if (!form) throw formNotFound();
+      return form;
     }),
 
   delete: protectedProcedure
@@ -145,19 +110,9 @@ export const formRouter = router({
     .input(z.object({ id: z.string() }))
     .output(z.object({ message: z.string() }))
     .mutation(async ({ input, ctx }) => {
-      const updated = await db.update(formsTable)
-        .set({ isActive: false, deletedAt: new Date() })
-        .where(and(
-          eq(formsTable.id, input.id),
-          eq(formsTable.creatorId, ctx.user.id)
-        ))
-        .returning()
-
-      if (updated.length === 0) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Form not found" })
-      }
-
-      return { message: "Form deleted successfully" }
+      const form = await deleteForm(ctx.user.id, input.id);
+      if (!form) throw formNotFound();
+      return { message: "Form deleted successfully" };
     }),
 
   getBySlug: publicProcedure
@@ -165,30 +120,14 @@ export const formRouter = router({
     .input(z.object({ slug: z.string() }))
     .output(z.any())
     .query(async ({ input }) => {
-      const form = await db.select().from(formsTable)
-        .where(and(
-          eq(formsTable.slug, input.slug),
-          eq(formsTable.isActive, true),
-          eq(formsTable.status, "published")
-        )).limit(1)
-
-      if (form.length === 0) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Form not found" })
-      }
-
-      return form[0]
+      const form = await getFormBySlug(input.slug);
+      if (!form) throw formNotFound();
+      return form;
     }),
 
   getPublicForms: publicProcedure
     .meta({ openapi: { method: "GET", path: "/forms/explore", tags: TAGS } })
     .input(z.object({}))
     .output(z.any())
-    .query(async () => {
-      return db.select().from(formsTable)
-        .where(and(
-          eq(formsTable.status, "published"),
-          eq(formsTable.visibility, "public"),
-          eq(formsTable.isActive, true)
-        ))
-    }),
-})
+    .query(() => getPublicForms()),
+});

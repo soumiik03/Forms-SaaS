@@ -3,7 +3,9 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./*"]
+      "~/*": ["./*"],
+      "@repo/database": ["../../packages/database/index.ts"],
+      "@repo/services/*": ["../../packages/services/*"]
     },
     "plugins": [
       {

@@ -1,11 +1,21 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
 # Dependencies
-node_modules
-.pnp
-.pnp.js
+node_modules/
 
-# Local env files
+# Next.js
+.next/
+out/
+
+# Turborepo
+.turbo/
+
+# Build outputs
+dist/
+build/
+
+# TypeScript
+*.tsbuildinfo
+
+# Environment
 .env
 .env.local
 .env.development.local
@@ -13,26 +23,21 @@ node_modules
 .env.production.local
 
 # Testing
-coverage
-
-# Turbo
-.turbo
+coverage/
 
 # Vercel
 .vercel
 
-# Build Outputs
-.next/
-out/
-build
-dist
-
-
-# Debug
+# Debug logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 
-# Misc
+# OS / editor
 .DS_Store
 *.pem
+
+# Drizzle (local migration artifacts, if generated locally)
+# Uncomment if you do not commit generated migration snapshots:
+# packages/database/drizzle/meta/

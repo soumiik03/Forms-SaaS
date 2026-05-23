@@ -391,9 +391,15 @@ importers:
       bcryptjs:
         specifier: ^3.0.3
         version: 3.0.3
+      drizzle-orm:
+        specifier: 0.45.2
+        version: 0.45.2(@types/pg@8.16.0)(pg@8.21.0)
       google-auth-library:
         specifier: ^10.5.0
         version: 10.5.0
+      nanoid:
+        specifier: ^5.1.11
+        version: 5.1.11
       zod:
         specifier: ^4.3.5
         version: 4.3.5
@@ -416,6 +422,9 @@ importers:
 
   packages/trpc:
     dependencies:
+      '@repo/database':
+        specifier: workspace:*
+        version: link:../database
       '@repo/services':
         specifier: workspace:*
         version: link:../services
@@ -428,9 +437,6 @@ importers:
       drizzle-orm:
         specifier: 0.45.2
         version: 0.45.2(@types/pg@8.16.0)(pg@8.21.0)
-      nanoid:
-        specifier: ^5.1.11
-        version: 5.1.11
       trpc-to-openapi:
         specifier: ^3.1.0
         version: 3.1.0(@trpc/server@11.8.1(typescript@5.9.3))(zod-openapi@5.4.5(zod@4.3.5))(zod@4.3.5)
