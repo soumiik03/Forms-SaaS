@@ -1,0 +1,342 @@
+/* ═══════════════════════════════════════════════
+   auth.module.css — Formulate dark theme
+   ═══════════════════════════════════════════════ */
+
+   .page {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr minmax(440px, 520px);
+    background: var(--bg, #0a0a0a);
+    color: var(--cream, #f5f0e8);
+  }
+  
+  /* ─── Brand panel (left) ──────────────────────── */
+  .brandPanel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 48px 52px;
+    border-right: 1px solid rgba(255, 255, 255, 0.07);
+    overflow: hidden;
+    background: #0a0a0a;
+  }
+  
+  .brandPanel::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 18% 22%, rgba(184, 255, 53, 0.12) 0%, transparent 40%),
+      radial-gradient(ellipse at 72% 80%, rgba(139, 92, 246, 0.15) 0%, transparent 44%);
+    pointer-events: none;
+  }
+  
+  /* Animated decorative blob */
+  .blob {
+    position: absolute;
+    right: -80px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 220px;
+    height: 480px;
+    background: linear-gradient(160deg, #8b5cf6 0%, #ec4899 60%, #b8ff35 100%);
+    border-radius: 999px;
+    opacity: 0.17;
+    filter: blur(40px);
+    pointer-events: none;
+    animation: blobFloat 6s ease-in-out infinite;
+  }
+  
+  @keyframes blobFloat {
+    0%, 100% { transform: translateY(-50%) scaleY(1); }
+    50%       { transform: translateY(-54%) scaleY(1.06); }
+  }
+  
+  .logo {
+    position: relative;
+    width: fit-content;
+    font-family: var(--font-display, "DM Sans", sans-serif);
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--cream, #f5f0e8);
+    letter-spacing: -0.04em;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    transition: opacity 0.15s;
+  }
+  
+  .logo:hover { opacity: 0.72; }
+  
+  .brandContent {
+    position: relative;
+  }
+  
+  /* eyebrow used in both panels — brand side via .brandContent */
+  .eyebrow {
+    font-family: var(--font-display, "DM Sans", sans-serif);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.17em;
+    text-transform: uppercase;
+    color: var(--lime, #b8ff35);
+    margin: 0;
+  }
+  
+  /* eyebrow specifically inside the form header */
+  .formEyebrow {
+    font-family: var(--font-display, "DM Sans", sans-serif);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.17em;
+    text-transform: uppercase;
+    color: var(--lime, #b8ff35);
+    margin: 0 0 10px;
+  }
+  
+  .brandHeading {
+    margin-top: 18px;
+    line-height: 0.92;
+    letter-spacing: -0.04em;
+    font-family: var(--font-display, "DM Sans", sans-serif);
+  }
+  
+  .headingFilled {
+    display: block;
+    font-size: clamp(48px, 5.8vw, 80px);
+    font-weight: 900;
+    color: var(--cream, #f5f0e8);
+  }
+  
+  .headingOutline {
+    display: block;
+    font-size: clamp(48px, 5.8vw, 80px);
+    font-weight: 900;
+    color: transparent;
+    -webkit-text-stroke: 1.5px rgba(245, 240, 232, 0.32);
+  }
+  
+  .brandDesc {
+    max-width: 460px;
+    margin-top: 22px;
+    color: rgba(200, 192, 168, 0.52);
+    font-size: 15px;
+    line-height: 1.65;
+  }
+  
+  /* Stats */
+  .stats {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    margin-top: 36px;
+  }
+  
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  
+  .statNum {
+    font-family: var(--font-display, "DM Sans", sans-serif);
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--cream, #f5f0e8);
+    letter-spacing: -0.03em;
+  }
+  
+  .statLabel {
+    font-size: 11px;
+    color: rgba(200, 192, 168, 0.4);
+    letter-spacing: 0.02em;
+  }
+  
+  .statDivider {
+    width: 1px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.09);
+  }
+  
+  /* ─── Form panel (right) ──────────────────────── */
+  .formPanel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 40px;
+    background: #111111;
+  }
+  
+  .formWrap {
+    width: 100%;
+    max-width: 380px;
+    animation: fadeUp 0.35s ease both;
+  }
+  
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  
+  /* ─── Form header ─────────────────────────────── */
+  .header {
+    margin-bottom: 28px;
+  }
+  
+  .header h2 {
+    margin: 0 0 8px;
+    font-family: var(--font-display, "DM Sans", sans-serif);
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.035em;
+    color: var(--cream, #f5f0e8);
+  }
+  
+  .headerDesc {
+    margin: 0;
+    color: rgba(200, 192, 168, 0.48);
+    font-size: 14px;
+    line-height: 1.55;
+  }
+  
+  /* ─── Form fields ─────────────────────────────── */
+  .fieldGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  
+  .label {
+    font-family: var(--font-display, "DM Sans", sans-serif);
+    font-size: 12.5px;
+    font-weight: 600;
+    color: rgba(200, 192, 168, 0.65);
+    letter-spacing: 0.01em;
+  }
+  
+  .input {
+    width: 100%;
+    padding: 11px 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 9px;
+    color: var(--cream, #f5f0e8);
+    font-size: 14.5px;
+    font-family: var(--font-display, "DM Sans", sans-serif);
+    outline: none;
+    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+  }
+  
+  .input::placeholder {
+    color: rgba(200, 192, 168, 0.22);
+  }
+  
+  .input:focus {
+    border-color: rgba(184, 255, 53, 0.45);
+    background: rgba(184, 255, 53, 0.035);
+    box-shadow: 0 0 0 3px rgba(184, 255, 53, 0.07);
+  }
+  
+  /* ─── Primary CTA button ──────────────────────── */
+  .btnPrimary {
+    width: 100%;
+    padding: 12px 24px;
+    margin-top: 6px;
+    background: var(--lime, #b8ff35);
+    color: #0a0a0a;
+    border: none;
+    border-radius: 9px;
+    font-family: var(--font-display, "DM Sans", sans-serif);
+    font-size: 14.5px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: -0.01em;
+    transition: opacity 0.15s, transform 0.15s;
+  }
+  
+  .btnPrimary:hover {
+    opacity: 0.88;
+    transform: translateY(-1px);
+  }
+  
+  .btnPrimary:active {
+    transform: translateY(0);
+    opacity: 0.95;
+  }
+  
+  /* ─── Forgot password link ────────────────────── */
+  .forgotLink {
+    display: block;
+    text-align: right;
+    font-size: 12px;
+    color: rgba(200, 192, 168, 0.38);
+    text-decoration: none;
+    margin-top: -4px;
+    margin-bottom: 10px;
+    transition: color 0.15s;
+  }
+  
+  .forgotLink:hover { color: var(--lime, #b8ff35); }
+  
+  /* ─── Terms text ──────────────────────────────── */
+  .termsText {
+    margin-top: 14px;
+    font-size: 11px;
+    color: rgba(200, 192, 168, 0.28);
+    text-align: center;
+    line-height: 1.6;
+  }
+  
+  .termsText a {
+    color: rgba(200, 192, 168, 0.48);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  
+  /* ─── Footer link ─────────────────────────────── */
+  .footerText {
+    margin-top: 22px;
+    color: rgba(200, 192, 168, 0.42);
+    font-size: 13px;
+    text-align: center;
+  }
+  
+  .footerLink {
+    color: var(--lime, #b8ff35);
+    font-weight: 700;
+    text-decoration: none;
+    transition: opacity 0.15s;
+  }
+  
+  .footerLink:hover { opacity: 0.72; }
+  
+  /* ─── Responsive ──────────────────────────────── */
+  @media (max-width: 960px) {
+    .page {
+      grid-template-columns: 1fr;
+    }
+  
+    .brandPanel {
+      min-height: 260px;
+      padding: 32px 28px;
+      border-right: none;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    }
+  
+    .headingFilled,
+    .headingOutline {
+      font-size: 42px;
+    }
+  
+    .blob { display: none; }
+  
+    .formPanel {
+      padding: 36px 24px;
+      background: #0a0a0a;
+    }
+  }
