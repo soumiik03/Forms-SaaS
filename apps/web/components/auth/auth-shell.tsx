@@ -45,8 +45,18 @@ export function AuthShell({
       <section className={styles.brandPanel}>
         <Link href="/" className={styles.logo}>
           <svg width="22" height="22" viewBox="0 0 20 20" fill="none">
-            <path d="M10 2L18 6.5V13.5L10 18L2 13.5V6.5L10 2Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-            <path d="M10 2V18M2 6.5L10 11L18 6.5" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+            <path
+              d="M10 2L18 6.5V13.5L10 18L2 13.5V6.5L10 2Z"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M10 2V18M2 6.5L10 11L18 6.5"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinejoin="round"
+            />
           </svg>
           Formulate
         </Link>
@@ -109,12 +119,16 @@ export function AuthInput({
   type = "text",
   placeholder,
   autoComplete,
+  value,
+  onChange,
 }: {
   label: string;
   id: string;
   type?: string;
   placeholder?: string;
   autoComplete?: string;
+  value?: string;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }) {
   return (
     <div className={styles.fieldGroup}>
@@ -127,15 +141,31 @@ export function AuthInput({
         type={type}
         placeholder={placeholder}
         autoComplete={autoComplete}
+        value={value}
+        onChange={onChange}
         className={styles.input}
       />
     </div>
   );
 }
 
-export function AuthButton({ children }: { children: ReactNode }) {
+export function AuthButton({
+  children,
+  disabled,
+}: {
+  children: ReactNode;
+  disabled?: boolean;
+}) {
   return (
-    <button type="submit" className={styles.btnPrimary}>
+    <button
+      type="submit"
+      className={styles.btnPrimary}
+      disabled={disabled}
+      style={{
+        opacity: disabled ? 0.6 : 1,
+        cursor: disabled ? "not-allowed" : "pointer",
+      }}
+    >
       {children}
     </button>
   );

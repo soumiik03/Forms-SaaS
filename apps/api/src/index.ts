@@ -1,6 +1,7 @@
 import http from "node:http";
 import { logger } from "@repo/logger";
 import { app as expressApplication } from "./server";
+import "dotenv/config"
 
 import { env } from "./env";
 
