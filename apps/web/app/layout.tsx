@@ -1,3 +1,4 @@
+import { GlobalProviders } from "~/providers/global";
 import type { Metadata } from "next";
 import "./globals.css";
 
@@ -20,7 +21,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <GlobalProviders>{children}</GlobalProviders>
+      </body>
     </html>
   );
 }
