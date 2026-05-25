@@ -1,6 +1,8 @@
 import { db, formsTable } from "@repo/database";
 import { and, eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
+import { asc } from "drizzle-orm"
+import { formFieldsTable } from "@repo/database"
 
 const generateSlug = (title: string) => {
   const base = title
@@ -113,6 +115,8 @@ export async function deleteForm(creatorId: string, formId: string) {
   return form ?? null;
 }
 
+
+
 export async function getFormBySlug(slug: string) {
   const [form] = await db
     .select()
@@ -124,9 +128,23 @@ export async function getFormBySlug(slug: string) {
         eq(formsTable.status, "published")
       )
     )
-    .limit(1);
+    .limit(1)
 
-  return form ?? null;
+  if (!form) return null
+
+  // Fetch fields for this form
+  const fields = await db
+    .select()
+    .from(formFieldsTable)
+    .where(
+      and(
+        eq(formFieldsTable.formId, form.id),
+        eq(formFieldsTable.isActive, true)
+      )
+    )
+    .orderBy(asc(formFieldsTable.order))
+
+  return { ...form, formFields: fields }
 }
 
 export async function getPublicForms() {
