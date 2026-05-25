@@ -1,8 +1,9 @@
 import { z } from "zod"
 import { router, publicProcedure, protectedProcedure } from "../../trpc"
-import { db, formResponsesTable, formsTable, formFieldsTable } from "@repo/database"
+import { db, formResponsesTable, formsTable, formFieldsTable,usersTable } from "@repo/database"
 import { eq, and, desc, sql } from "drizzle-orm"
 import { TRPCError } from "@trpc/server"
+import { sendCreatorNotification, sendRespondentConfirmation } from "@repo/services/email"
 
 const TAGS = ["Responses"]
 
@@ -59,6 +60,29 @@ export const responseRouter = router({
       await db.update(formsTable)
         .set({ submissionCount: sql`${formsTable.submissionCount} + 1` })
         .where(eq(formsTable.id, foundForm.id))
+
+      if (foundForm.creatorId) {
+        const creator = await db.select().from(usersTable)
+          .where(eq(usersTable.id, foundForm.creatorId))
+          .limit(1)
+
+        if (creator[0]) {
+          sendCreatorNotification({
+            creatorEmail: creator[0].email,
+            creatorName: creator[0].fullName,
+            formTitle: foundForm.title,
+            responseCount: (foundForm.submissionCount ?? 0) + 1,
+            formSlug: foundForm.slug,
+          }).catch(console.error)
+        }
+      }
+
+      if (input.respondentEmail) {
+        sendRespondentConfirmation({
+          respondentEmail: input.respondentEmail,
+          formTitle: foundForm.title,
+        }).catch(console.error)
+      }
 
       return { message: "Response submitted successfully" }
     }),
