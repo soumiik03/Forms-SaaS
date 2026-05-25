@@ -23,9 +23,9 @@ type AuthShellProps = {
 const defaultBrand: Required<AuthBrandProps> = {
   eyebrow: "Formulate",
   headingFilled: "Design once.",
-  headingOutline: "Collect forever.",
+  headingOutline: "Collect clearly.",
   description:
-    "A focused builder for forms that feel intentional — logic, styling, and live responses without the spreadsheet chaos.",
+    "A focused builder for polished forms, controlled publishing, and response analytics in one workspace.",
 };
 
 export function AuthShell({
@@ -41,7 +41,6 @@ export function AuthShell({
   const panel = { ...defaultBrand, ...brand };
   return (
     <main className={styles.page}>
-      {/* Left brand panel */}
       <section className={styles.brandPanel}>
         <Link href="/" className={styles.logo}>
           <svg width="22" height="22" viewBox="0 0 20 20" fill="none">
@@ -71,18 +70,18 @@ export function AuthShell({
 
           <div className={styles.stats}>
             <div className={styles.stat}>
-              <span className={styles.statNum}>50K+</span>
-              <span className={styles.statLabel}>Forms built</span>
+              <span className={styles.statNum}>Build</span>
+              <span className={styles.statLabel}>Visual forms</span>
             </div>
             <div className={styles.statDivider} />
             <div className={styles.stat}>
-              <span className={styles.statNum}>12M+</span>
-              <span className={styles.statLabel}>Submissions</span>
+              <span className={styles.statNum}>Share</span>
+              <span className={styles.statLabel}>Public or unlisted</span>
             </div>
             <div className={styles.statDivider} />
             <div className={styles.stat}>
-              <span className={styles.statNum}>4.9★</span>
-              <span className={styles.statLabel}>Avg rating</span>
+              <span className={styles.statNum}>Track</span>
+              <span className={styles.statLabel}>Responses</span>
             </div>
           </div>
         </div>
@@ -90,7 +89,6 @@ export function AuthShell({
         <div className={styles.blob} aria-hidden="true" />
       </section>
 
-      {/* Right form panel */}
       <section className={styles.formPanel}>
         <div className={styles.formWrap}>
           <div className={styles.header}>

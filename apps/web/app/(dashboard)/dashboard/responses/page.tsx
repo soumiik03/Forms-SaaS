@@ -2,16 +2,20 @@
 
 import { useState } from "react"
 import { trpc } from "~/trpc/client"
+import { FormSelector } from "~/components/dashboard/form-selector"
 
 export default function ResponsesPage() {
-  const { data: forms } = trpc.form.getMyForms.useQuery({})
+  const { data: forms } = trpc.form.getMyForms.useQuery(
+    {},
+    { refetchInterval: 5000, refetchOnWindowFocus: true }
+  )
   const [selectedFormId, setSelectedFormId] = useState<string | null>(null)
 
   const selectedForm = forms?.find(f => f.id === selectedFormId) ?? forms?.[0] ?? null
 
   const { data: responses, isLoading } = trpc.response.getResponses.useQuery(
     { formId: selectedForm?.id ?? "" },
-    { enabled: !!selectedForm?.id }
+    { enabled: !!selectedForm?.id, refetchInterval: 5000, refetchOnWindowFocus: true }
   )
 
   return (
@@ -33,22 +37,12 @@ export default function ResponsesPage() {
         display: "flex", alignItems: "center",
         justifyContent: "space-between", marginBottom: 24,
       }}>
-        <select
+        <FormSelector
           value={selectedForm?.id ?? ""}
-          onChange={e => setSelectedFormId(e.target.value)}
-          style={{
-            background: "rgba(255,255,255,0.05)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: 8, padding: "9px 16px",
-            color: "var(--cream)", fontSize: 14,
-            fontFamily: "var(--font-display)", fontWeight: 500,
-            outline: "none", cursor: "pointer", minWidth: 280,
-          }}
-        >
-          {forms?.map(f => (
-            <option key={f.id} value={f.id}>{f.title}</option>
-          ))}
-        </select>
+          options={forms?.map((form) => ({ id: form.id, title: form.title })) ?? []}
+          onChange={setSelectedFormId}
+          minWidth={350}
+        />
 
         <div style={{
           fontSize: 13, color: "rgba(255,255,255,0.35)",

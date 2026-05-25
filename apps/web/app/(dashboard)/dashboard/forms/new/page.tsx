@@ -40,6 +40,7 @@ export default function NewFormPage() {
   const [saving, setSaving] = useState(false)
   const [editingTitle, setEditingTitle] = useState(false)
   const [visibility, setVisibility] = useState<"public" | "unlisted">("unlisted")
+  const [dropdownOpen, setDropdownOpen] = useState(false)
 
   const createForm = trpc.form.create.useMutation()
   const addField = trpc.field.addField.useMutation()
@@ -227,25 +228,96 @@ export default function NewFormPage() {
           </div>
 
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <select
-              value={visibility}
-              onChange={e => setVisibility(e.target.value as "public" | "unlisted")}
-              style={{
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                borderRadius: 8,
-                color: "var(--cream-dim)",
-                fontFamily: "var(--font-display)",
-                fontWeight: 600,
-                fontSize: 13,
-                padding: "7px 14px",
-                cursor: "pointer",
-                outline: "none",
-              }}
-            >
-              <option value="unlisted">🔒 Unlisted</option>
-              <option value="public">🌐 Public</option>
-            </select>
+
+            {/* ── Custom dropdown replacing <select> to avoid OS white-border ── */}
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={() => setDropdownOpen(o => !o)}
+                onBlur={() => setTimeout(() => setDropdownOpen(false), 120)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "7px 14px",
+                  background: visibility === "unlisted"
+                    ? "rgba(184,255,53,0.08)"
+                    : "rgba(96,165,250,0.1)",
+                  border: visibility === "unlisted"
+                    ? "1px solid rgba(184,255,53,0.22)"
+                    : "1px solid rgba(96,165,250,0.24)",
+                  borderRadius: 8,
+                  color: visibility === "unlisted" ? "#b8ff35" : "#60a5fa",
+                  fontFamily: "var(--font-display)",
+                  fontWeight: 600,
+                  fontSize: 13,
+                  cursor: "pointer",
+                  outline: "none",
+                  transition: "all 0.15s",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {visibility === "unlisted" ? "Unlisted" : "Public"}
+                <span style={{
+                  fontSize: 10,
+                  opacity: 0.7,
+                  transform: dropdownOpen ? "rotate(180deg)" : "rotate(0deg)",
+                  transition: "transform 0.15s",
+                  display: "inline-block",
+                }}>▾</span>
+              </button>
+
+              {dropdownOpen && (
+                <div style={{
+                  position: "absolute",
+                  top: "calc(100% + 6px)",
+                  right: 0,
+                  minWidth: "100%",
+                  background: "#111",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: 10,
+                  overflow: "hidden",
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
+                  zIndex: 50,
+                }}>
+                  {[
+                    { value: "unlisted", label: "Unlisted", color: "#b8ff35" },
+                    { value: "public",   label: "Public",   color: "#60a5fa" },
+                  ].map(opt => (
+                    <button
+                      key={opt.value}
+                      onMouseDown={() => {
+                        setVisibility(opt.value as "public" | "unlisted")
+                        setDropdownOpen(false)
+                      }}
+                      style={{
+                        display: "block",
+                        width: "100%",
+                        padding: "10px 16px",
+                        background: visibility === opt.value
+                          ? "rgba(255,255,255,0.06)"
+                          : "transparent",
+                        border: "none",
+                        borderBottom: opt.value === "unlisted"
+                          ? "1px solid rgba(255,255,255,0.06)"
+                          : "none",
+                        color: opt.color,
+                        fontFamily: "var(--font-display)",
+                        fontWeight: 600,
+                        fontSize: 13,
+                        cursor: "pointer",
+                        textAlign: "left",
+                        transition: "background 0.12s",
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.06)"}
+                      onMouseLeave={e => e.currentTarget.style.background = visibility === opt.value ? "rgba(255,255,255,0.06)" : "transparent"}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            {/* ── end custom dropdown ── */}
 
             <button
               onClick={() => handleSave(false)}

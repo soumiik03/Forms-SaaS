@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { S } from "./landing-styles";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60);
@@ -39,7 +40,12 @@ export function Navbar() {
     >
       {/* Logo */}
       <Link
-        href="/"
+        href="/#hero"
+        onClick={(e) => {
+          if (pathname !== "/") return;
+          e.preventDefault();
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }}
         style={{
           fontFamily: "var(--font-display)",
           fontWeight: 800,
@@ -53,7 +59,6 @@ export function Navbar() {
           minWidth: "140px",
         }}
       >
-        {/* Tiny cube icon like Cursor */}
         <svg width="24" height="24" viewBox="0 0 20 20" fill="none">
           <path d="M10 2L18 6.5V13.5L10 18L2 13.5V6.5L10 2Z" stroke="var(--cream)" strokeWidth="1.5" strokeLinejoin="round"/>
           <path d="M10 2V18M2 6.5L10 11L18 6.5" stroke="var(--cream)" strokeWidth="1.5" strokeLinejoin="round"/>
@@ -150,7 +155,10 @@ function NavLink({ label, id }: { label: string; id: string }) {
 
   const scrollTo = () => {
     const el = document.getElementById(id);
-    if (!el) return;
+    if (!el) {
+      window.location.href = `/#${id}`;
+      return;
+    }
     const navH = 68;
     const top = el.getBoundingClientRect().top + window.scrollY - navH;
     window.scrollTo({ top, behavior: "smooth" });

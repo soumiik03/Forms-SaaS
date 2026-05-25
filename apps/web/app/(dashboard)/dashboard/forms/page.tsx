@@ -2,13 +2,23 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { Check, Copy, Pencil, Plus, Trash2 } from "lucide-react"
 import { trpc } from "~/trpc/client"
 
 export default function FormsPage() {
-  const { data: forms, isLoading } = trpc.form.getMyForms.useQuery({})
+  const utils = trpc.useUtils()
+  const { data: forms, isLoading } = trpc.form.getMyForms.useQuery(
+    {},
+    { refetchInterval: 5000, refetchOnWindowFocus: true }
+  )
+  const deleteForm = trpc.form.delete.useMutation({
+    onSuccess: async () => {
+      await utils.form.getMyForms.invalidate()
+    },
+  })
 
   return (
-    <div style={{ padding: "40px 48px", maxWidth: 1100 }}>
+    <div style={{ padding: "40px clamp(24px, 4vw, 56px)", width: "100%", maxWidth: 1360, boxSizing: "border-box" }}>
       <div style={{
         display: "flex", justifyContent: "space-between",
         alignItems: "center", marginBottom: 40,
@@ -30,7 +40,7 @@ export default function FormsPage() {
           fontFamily: "var(--font-display)", fontWeight: 700,
           fontSize: 13, textDecoration: "none",
           borderRadius: 8,
-        }}>+ New Form</Link>
+        }}><Plus size={16} /> New Form</Link>
       </div>
 
       {isLoading ? (
@@ -66,7 +76,7 @@ export default function FormsPage() {
         }}>
           <div style={{
             display: "grid",
-            gridTemplateColumns: "1fr 120px 100px 120px 140px",
+            gridTemplateColumns: "minmax(240px, 1fr) 120px 100px 120px 230px",
             padding: "10px 20px",
             background: "rgba(255,255,255,0.02)",
             borderBottom: "1px solid rgba(255,255,255,0.06)",
@@ -82,10 +92,12 @@ export default function FormsPage() {
           </div>
 
           {forms?.map((form, i) => (
-            <FormRow
+              <FormRow
               key={form.id}
               form={form}
               isLast={i === (forms?.length ?? 0) - 1}
+              onDelete={() => deleteForm.mutate({ id: form.id })}
+              deleting={deleteForm.isPending}
             />
           ))}
         </div>
@@ -94,14 +106,36 @@ export default function FormsPage() {
   )
 }
 
-function FormRow({ form, isLast }: { form: any; isLast: boolean }) {
+function FormRow({
+  form,
+  isLast,
+  onDelete,
+  deleting,
+}: {
+  form: any
+  isLast: boolean
+  onDelete: () => void
+  deleting: boolean
+}) {
   const [hov, setHov] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const isLive = form.status === "published"
+  const copyLink = async () => {
+    const url = `${window.location.origin}/f/${form.slug}`
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1300)
+    } catch {
+      window.prompt("Copy this form link:", url)
+    }
+  }
 
   return (
     <div style={{
       display: "grid",
-      gridTemplateColumns: "1fr 120px 100px 120px 140px",
+      gridTemplateColumns: "minmax(240px, 1fr) 120px 100px 120px 230px",
       padding: "14px 20px", alignItems: "center",
       borderBottom: isLast ? "none" : "1px solid rgba(255,255,255,0.04)",
       background: hov ? "rgba(255,255,255,0.02)" : "transparent",
@@ -134,12 +168,13 @@ function FormRow({ form, isLast }: { form: any; isLast: boolean }) {
         fontSize: 11, fontWeight: 600, padding: "3px 10px",
         borderRadius: 99, fontFamily: "var(--font-display)",
         background: form.visibility === "public"
-          ? "rgba(96,165,250,0.12)" : "rgba(255,255,255,0.06)",
+          ? "rgba(96,165,250,0.12)" : "rgba(184,255,53,0.08)",
         color: form.visibility === "public"
-          ? "#60a5fa" : "rgba(255,255,255,0.35)",
+          ? "#60a5fa" : "var(--lime)",
         border: `1px solid ${form.visibility === "public"
-          ? "rgba(96,165,250,0.2)" : "rgba(255,255,255,0.08)"}`,
+          ? "rgba(96,165,250,0.2)" : "rgba(184,255,53,0.18)"}`,
         width: "fit-content",
+        textTransform: "capitalize",
       }}>
         {form.visibility ?? "unlisted"}
       </span>
@@ -160,25 +195,55 @@ function FormRow({ form, isLast }: { form: any; isLast: boolean }) {
 
       <div style={{ display: "flex", gap: 6 }}>
         <button
-          onClick={() => {
-            navigator.clipboard.writeText(`${window.location.origin}/f/${form.slug}`)
-            alert("Link copied!")
-          }}
+          onClick={copyLink}
           style={{
             fontSize: 11, color: "rgba(255,255,255,0.35)",
             background: "transparent", cursor: "pointer",
             padding: "4px 8px", borderRadius: 6,
             border: "1px solid rgba(255,255,255,0.08)",
             fontFamily: "var(--font-display)",
+            display: "inline-flex", alignItems: "center", gap: 5,
           }}
-        >Copy</button>
+        >
+          {copied ? <Check size={13} /> : <Copy size={13} />}
+          {copied ? "Copied" : "Copy"}
+        </button>
         <Link href={`/dashboard/forms/${form.id}`} style={{
           fontSize: 11, color: "rgba(255,255,255,0.35)",
           textDecoration: "none", padding: "4px 8px",
           borderRadius: 6,
           border: "1px solid rgba(255,255,255,0.08)",
           fontFamily: "var(--font-display)",
-        }}>Edit</Link>
+          display: "inline-flex", alignItems: "center", gap: 5,
+        }}><Pencil size={12} /> Edit</Link>
+        <button
+          type="button"
+          onClick={() => {
+            if (!confirmDelete) {
+              setConfirmDelete(true)
+              window.setTimeout(() => setConfirmDelete(false), 2200)
+              return
+            }
+            onDelete()
+          }}
+          disabled={deleting}
+          style={{
+            fontSize: 11,
+            color: deleting ? "rgba(255,255,255,0.25)" : "#f87171",
+            background: "transparent",
+            cursor: deleting ? "not-allowed" : "pointer",
+            padding: "4px 8px",
+            borderRadius: 6,
+            border: "1px solid rgba(248,113,113,0.18)",
+            fontFamily: "var(--font-display)",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 5,
+          }}
+        >
+          <Trash2 size={12} />
+          {confirmDelete ? "Confirm" : "Delete"}
+        </button>
       </div>
     </div>
   )

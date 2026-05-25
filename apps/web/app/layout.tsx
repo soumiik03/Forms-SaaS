@@ -3,13 +3,13 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Formulate — Build Forms That Convert",
+  title: "Formulate | Modern Form Operations",
   description:
-    "Formulate is the wildly powerful form builder for professionals. Drag, drop, and deploy beautiful forms with logic, analytics, and integrations — in minutes.",
+    "Create polished forms, publish them with intent, and review responses from a focused workspace.",
   keywords: ["form builder", "SaaS", "drag and drop", "form analytics", "no-code"],
   openGraph: {
-    title: "Formulate — Build Forms That Convert",
-    description: "The professional-grade form builder. No code required.",
+    title: "Formulate | Modern Form Operations",
+    description: "A clean workspace for building, sharing, and analyzing forms.",
     type: "website",
   },
 };

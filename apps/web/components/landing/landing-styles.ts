@@ -27,8 +27,6 @@ export const S: Record<string, CSSProperties> = {
     background: "rgba(10,10,10,0.92)",
     backdropFilter: "blur(20px)",
     borderBottom: "1px solid var(--border)",
-    /* needed so absolute child can center relative to full nav width */
-    //position: "sticky" as const,
   },
   navCenter: {
     position: "absolute" as const,
@@ -82,11 +80,11 @@ export const S: Record<string, CSSProperties> = {
 
   /* HERO */
   hero: {
-    minHeight: "100vh",
+    minHeight: "calc(100vh - 48px)",
     display: "flex",
     flexDirection: "column" as const,
-    justifyContent: "center",
-    padding: "80px 40px 60px",
+    justifyContent: "center",           // ← was flex-start, now centered vertically
+    padding: "0 clamp(28px, 3.4vw, 64px) 56px",  // ← removed top padding, let justify center do the work
     position: "relative" as const,
     overflow: "hidden",
   },
@@ -104,12 +102,13 @@ export const S: Record<string, CSSProperties> = {
   },
   heroTitle: {
     fontFamily: "var(--font-display)",
-    fontSize: "clamp(72px, 11vw, 160px)",
+    fontSize: "clamp(56px, 7.2vw, 104px)",
     fontWeight: 800,
-    lineHeight: 0.9,
-    letterSpacing: "-0.04em",
+    lineHeight: 1.04,
+    letterSpacing: "-0.02em",
     color: "var(--cream)",
-    maxWidth: "1100px",
+    maxWidth: "1280px",
+    margin: 0,
   },
   heroTitleAccent: {
     color: "transparent",

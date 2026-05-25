@@ -2,17 +2,32 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { Check, Copy, Pencil, Plus, Trash2 } from "lucide-react"
 import { trpc } from "~/trpc/client"
 
 export default function DashboardPage() {
-  const { data: forms, isLoading } = trpc.form.getMyForms.useQuery({})
+  const utils = trpc.useUtils()
+  const { data: forms, isLoading } = trpc.form.getMyForms.useQuery(
+    {},
+    { refetchInterval: 5000, refetchOnWindowFocus: true }
+  )
   const { data: me } = trpc.auth.me.useQuery({})
+  const deleteForm = trpc.form.delete.useMutation({
+    onSuccess: async () => {
+      await utils.form.getMyForms.invalidate()
+    },
+  })
 
   const publishedForms = forms?.filter(f => f.status === "published") ?? []
   const totalResponses = forms?.reduce((acc, f) => acc + (f.submissionCount ?? 0), 0) ?? 0
+  const totalViews = forms?.reduce(
+    (acc, f) => acc + Math.max(f.viewCount ?? 0, f.submissionCount ?? 0),
+    0
+  ) ?? 0
+  const completionRate = totalViews > 0 ? Math.round((totalResponses / totalViews) * 100) : 0
 
   return (
-    <div style={{ padding: "40px 48px", maxWidth: 1100 }}>
+    <div style={{ padding: "40px clamp(24px, 4vw, 56px)", width: "100%", maxWidth: 1360, boxSizing: "border-box" }}>
       {/* Header */}
       <div style={{
         display: "flex", justifyContent: "space-between",
@@ -41,7 +56,8 @@ export default function DashboardPage() {
         onMouseEnter={e => e.currentTarget.style.opacity = "0.88"}
         onMouseLeave={e => e.currentTarget.style.opacity = "1"}
         >
-          + New Form
+          <Plus size={16} />
+          New Form
         </Link>
       </div>
 
@@ -54,7 +70,7 @@ export default function DashboardPage() {
           { label: "Total Forms", value: forms?.length ?? 0, color: "var(--cream)", loading: isLoading },
           { label: "Live Forms", value: publishedForms.length, color: "var(--lime)", loading: isLoading },
           { label: "Responses", value: totalResponses, color: "#60a5fa", loading: isLoading },
-          { label: "Completion", value: "-", color: "rgba(255,255,255,0.4)", loading: false },
+          { label: "Completion", value: `${completionRate}%`, color: totalViews > 0 ? "#10b981" : "rgba(255,255,255,0.4)", loading: isLoading },
         ].map(s => (
           <StatCard key={s.label} {...s} />
         ))}
@@ -94,7 +110,7 @@ export default function DashboardPage() {
             {/* Table header */}
             <div style={{
               display: "grid",
-              gridTemplateColumns: "1fr 120px 100px 120px 170px",
+              gridTemplateColumns: "minmax(240px, 1fr) 120px 100px 120px 300px",
               padding: "10px 20px",
               background: "rgba(255,255,255,0.02)",
               borderBottom: "1px solid rgba(255,255,255,0.06)",
@@ -115,6 +131,8 @@ export default function DashboardPage() {
                 key={form.id}
                 form={form}
                 isLast={i === Math.min(forms.length, 8) - 1}
+                onDelete={() => deleteForm.mutate({ id: form.id })}
+                deleting={deleteForm.isPending}
               />
             ))}
           </div>
@@ -153,8 +171,20 @@ function StatCard({ label, value, color, loading }: {
   )
 }
 
-function FormRow({ form, isLast }: { form: any; isLast: boolean }) {
+function FormRow({
+  form,
+  isLast,
+  onDelete,
+  deleting,
+}: {
+  form: any
+  isLast: boolean
+  onDelete: () => void
+  deleting: boolean
+}) {
   const [hov, setHov] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const isLive = form.status === "published"
 
   const copyLink = async () => {
@@ -162,7 +192,8 @@ function FormRow({ form, isLast }: { form: any; isLast: boolean }) {
 
     try {
       await navigator.clipboard.writeText(url)
-      alert("Link copied!")
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1300)
     } catch {
       window.prompt("Copy this form link:", url)
     }
@@ -171,7 +202,7 @@ function FormRow({ form, isLast }: { form: any; isLast: boolean }) {
   return (
     <div style={{
       display: "grid",
-      gridTemplateColumns: "1fr 120px 100px 120px 170px",
+      gridTemplateColumns: "minmax(240px, 1fr) 120px 100px 120px 300px",
       padding: "14px 20px",
       alignItems: "center",
       borderBottom: isLast ? "none" : "1px solid rgba(255,255,255,0.04)",
@@ -209,12 +240,13 @@ function FormRow({ form, isLast }: { form: any; isLast: boolean }) {
         <span style={{
           fontSize: 11, fontWeight: 600, padding: "3px 10px",
           borderRadius: 99, fontFamily: "var(--font-display)",
-          background: form.visibility === "public"
-            ? "rgba(96,165,250,0.12)" : "rgba(255,255,255,0.06)",
+            background: form.visibility === "public"
+            ? "rgba(96,165,250,0.12)" : "rgba(184,255,53,0.08)",
           color: form.visibility === "public"
-            ? "#60a5fa" : "rgba(255,255,255,0.35)",
+            ? "#60a5fa" : "var(--lime)",
           border: `1px solid ${form.visibility === "public"
-            ? "rgba(96,165,250,0.2)" : "rgba(255,255,255,0.08)"}`,
+            ? "rgba(96,165,250,0.2)" : "rgba(184,255,53,0.18)"}`,
+          textTransform: "capitalize",
         }}>
           {form.visibility ?? "unlisted"}
         </span>
@@ -252,14 +284,27 @@ function FormRow({ form, isLast }: { form: any; isLast: boolean }) {
             border: "1px solid rgba(255,255,255,0.08)",
             cursor: "pointer",
             fontFamily: "var(--font-display)",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
           }}
         >
-          Copy link
+          {copied ? <Check size={14} /> : <Copy size={14} />}
+          <span style={{
+            display: "inline-block",
+            width: copied ? 42 : 58,
+            transition: "width .2s ease",
+            overflow: "hidden",
+            whiteSpace: "nowrap",
+          }}>
+            {copied ? "Copied" : "Copy link"}
+          </span>
         </button>
 
         <Link href={`/dashboard/forms/${form.id}`} style={{
           fontSize: 12, color: "rgba(255,255,255,0.35)",
           textDecoration: "none", fontFamily: "var(--font-display)",
+          display: "inline-flex", alignItems: "center", gap: 6,
           padding: "4px 10px", borderRadius: 6,
           border: "1px solid rgba(255,255,255,0.08)",
           transition: "all .15s",
@@ -272,7 +317,35 @@ function FormRow({ form, isLast }: { form: any; isLast: boolean }) {
           e.currentTarget.style.color = "rgba(255,255,255,0.35)"
           e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"
         }}
-        >Edit</Link>
+        ><Pencil size={13} /> Edit</Link>
+        <button
+          type="button"
+          onClick={() => {
+            if (!confirmDelete) {
+              setConfirmDelete(true)
+              window.setTimeout(() => setConfirmDelete(false), 2200)
+              return
+            }
+            onDelete()
+          }}
+          disabled={deleting}
+          style={{
+            fontSize: 12,
+            color: deleting ? "rgba(255,255,255,0.25)" : "#f87171",
+            background: "transparent",
+            padding: "4px 10px",
+            borderRadius: 6,
+            border: "1px solid rgba(248,113,113,0.18)",
+            cursor: deleting ? "not-allowed" : "pointer",
+            fontFamily: "var(--font-display)",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
+          <Trash2 size={13} />
+          {confirmDelete ? "Confirm" : "Delete"}
+        </button>
       </div>
     </div>
   )
@@ -304,7 +377,8 @@ function EmptyState() {
         fontFamily: "var(--font-display)", fontWeight: 700,
         fontSize: 13, textDecoration: "none", borderRadius: 8,
       }}>
-        + Create your first form
+        <Plus size={16} />
+        Create your first form
       </Link>
     </div>
   )

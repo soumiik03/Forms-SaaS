@@ -1,8 +1,8 @@
 import { db, formsTable } from "@repo/database";
-import { and, eq } from "drizzle-orm";
+import { and, eq, count } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { asc } from "drizzle-orm"
-import { formFieldsTable } from "@repo/database"
+import { formFieldsTable, formResponsesTable } from "@repo/database"
 
 const generateSlug = (title: string) => {
   const base = title
@@ -50,12 +50,34 @@ export async function createForm(creatorId: string, input: CreateFormInput) {
 }
 
 export async function getMyForms(creatorId: string) {
-  return db
+  const forms = await db
     .select()
     .from(formsTable)
     .where(
       and(eq(formsTable.creatorId, creatorId), eq(formsTable.isActive, true))
     );
+
+  return Promise.all(
+    forms.map(async (form) => {
+      const responseCount = await db
+        .select({ value: count() })
+        .from(formResponsesTable)
+        .where(
+          and(
+            eq(formResponsesTable.formId, form.id),
+            eq(formResponsesTable.isActive, true)
+          )
+        )
+
+      const submissionCount = responseCount[0]?.value ?? form.submissionCount ?? 0
+
+      return {
+        ...form,
+        submissionCount,
+        viewCount: Math.max(form.viewCount ?? 0, submissionCount),
+      }
+    })
+  );
 }
 
 export async function updateForm(creatorId: string, input: UpdateFormInput) {

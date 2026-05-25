@@ -52,10 +52,11 @@ function FormFiller({ form, slug }: { form: FormData; slug: string }) {
   const [submitted, setSubmitted] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [respondentEmail, setRespondentEmail] = useState("")
+  const [submitError, setSubmitError] = useState("")
 
   const submit = trpc.response.submit.useMutation({
     onSuccess: () => setSubmitted(true),
-    onError: err => alert(err.message),
+    onError: err => setSubmitError(err.message),
   })
 
   const setAnswer = (fieldId: string, value: unknown) => {
@@ -65,6 +66,7 @@ function FormFiller({ form, slug }: { form: FormData; slug: string }) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    setSubmitError("")
 
     const newErrors: Record<string, string> = {}
 
@@ -246,6 +248,17 @@ function FormFiller({ form, slug }: { form: FormData; slug: string }) {
           >
             {submit.isPending ? "Submitting..." : "Submit"}
           </button>
+          {submitError && (
+            <p style={{
+              marginTop: 12,
+              fontSize: 13,
+              color: "#f87171",
+              fontFamily: "var(--font-body)",
+              textAlign: "center",
+            }}>
+              {submitError}
+            </p>
+          )}
         </form>
       </div>
     </div>
@@ -325,11 +338,11 @@ function FormFieldInput({ field, value, error, onChange }: {
         <select
           value={(value as string) ?? ""}
           onChange={e => onChange(e.target.value)}
-          style={{ ...inputBase, cursor: "pointer" }}
+          style={{ ...inputBase, background: "#111", cursor: "pointer" }}
         >
-          <option value="" disabled>Select an option</option>
+          <option value="" disabled style={{ background: "#111", color: "rgba(255,255,255,0.45)" }}>Select an option</option>
           {field.options?.map(opt => (
-            <option key={opt} value={opt}>{opt}</option>
+            <option key={opt} value={opt} style={{ background: "#111", color: "#f0ead6" }}>{opt}</option>
           ))}
         </select>
       )}

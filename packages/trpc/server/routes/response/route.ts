@@ -1,7 +1,7 @@
 import { z } from "zod"
 import { router, publicProcedure, protectedProcedure } from "../../trpc"
 import { db, formResponsesTable, formsTable, formFieldsTable,usersTable } from "@repo/database"
-import { eq, and, desc, sql } from "drizzle-orm"
+import { eq, and, desc, sql, count } from "drizzle-orm"
 import { TRPCError } from "@trpc/server"
 import { sendCreatorNotification, sendRespondentConfirmation } from "@repo/services/email"
 
@@ -58,7 +58,10 @@ export const responseRouter = router({
       })
 
       await db.update(formsTable)
-        .set({ submissionCount: sql`${formsTable.submissionCount} + 1` })
+        .set({
+          submissionCount: sql`COALESCE(${formsTable.submissionCount}, 0) + 1`,
+          viewCount: sql`GREATEST(COALESCE(${formsTable.viewCount}, 0), COALESCE(${formsTable.submissionCount}, 0) + 1)`,
+        })
         .where(eq(formsTable.id, foundForm.id))
 
       if (foundForm.creatorId) {
@@ -103,7 +106,10 @@ export const responseRouter = router({
       }
 
       return db.select().from(formResponsesTable)
-        .where(eq(formResponsesTable.formId, input.formId))
+        .where(and(
+          eq(formResponsesTable.formId, input.formId),
+          eq(formResponsesTable.isActive, true)
+        ))
         .orderBy(desc(formResponsesTable.submittedAt))
     }),
 
@@ -127,8 +133,16 @@ export const responseRouter = router({
         throw new TRPCError({ code: "FORBIDDEN", message: "Not your form" })
       }
 
-      const totalResponses = foundForm.submissionCount ?? 0
-      const totalViews = foundForm.viewCount ?? 0
+      const countedResponses = await db
+        .select({ value: count() })
+        .from(formResponsesTable)
+        .where(and(
+          eq(formResponsesTable.formId, input.formId),
+          eq(formResponsesTable.isActive, true)
+        ))
+
+      const totalResponses = countedResponses[0]?.value ?? 0
+      const totalViews = Math.max(foundForm.viewCount ?? 0, totalResponses)
 
       const completionRate = totalViews > 0
         ? Math.round((totalResponses / totalViews) * 100)

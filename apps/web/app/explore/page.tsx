@@ -22,6 +22,13 @@ export default function ExplorePage() {
           letterSpacing: "-0.02em",
         }}>Formulate</Link>
         <div style={{ display: "flex", gap: 12 }}>
+          <Link href="/dashboard" style={{
+            fontSize: 14, color: "rgba(255,255,255,0.58)",
+            textDecoration: "none", padding: "7px 16px",
+            fontFamily: "var(--font-display)", fontWeight: 500,
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: 8,
+          }}>Back to dashboard</Link>
           <Link href="/login" style={{
             fontSize: 14, color: "rgba(255,255,255,0.5)",
             textDecoration: "none", padding: "7px 16px",

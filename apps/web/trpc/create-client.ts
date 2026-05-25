@@ -1,7 +1,7 @@
 import { httpBatchLink } from "@trpc/client"
 import { authStore } from "~/lib/auth"
 
-export const createTRPCHttpBatchClientClient = () => {
+export const createTRPCHttpBatchClientClient = (_options?: { enableStreaming?: boolean }) => {
   return httpBatchLink({
     url: process.env.NEXT_PUBLIC_API_URL + "/trpc",
     headers: () => {

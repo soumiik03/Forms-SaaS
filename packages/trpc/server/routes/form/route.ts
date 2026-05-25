@@ -11,8 +11,8 @@ import {
   getFormBySlug,
   getPublicForms,
 } from "@repo/services/form";
-import { db,  formFieldsTable } from "@repo/database";
-import { eq, and, asc } from "drizzle-orm";
+import { db, formFieldsTable, formsTable } from "@repo/database";
+import { eq, and, asc, sql } from "drizzle-orm";
 
 const TAGS = ["Forms"];
 
@@ -53,6 +53,7 @@ export const formRouter = router({
           status: z.string().nullable(),
           visibility: z.string().nullable(),
           submissionCount: z.number().nullable(),
+          viewCount: z.number().nullable(),
           createdAt: z.date().nullable(),
           updatedAt: z.date().nullable(),
         })
@@ -124,6 +125,11 @@ export const formRouter = router({
     .query(async ({ input }) => {
       const form = await getFormBySlug(input.slug);
       if (!form) throw formNotFound();
+
+      await db
+        .update(formsTable)
+        .set({ viewCount: sql`COALESCE(${formsTable.viewCount}, 0) + 1` })
+        .where(eq(formsTable.id, form.id));
 
       const fields = await db
         .select()
