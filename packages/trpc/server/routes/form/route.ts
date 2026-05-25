@@ -11,6 +11,8 @@ import {
   getFormBySlug,
   getPublicForms,
 } from "@repo/services/form";
+import { db,  formFieldsTable } from "@repo/database";
+import { eq, and, asc } from "drizzle-orm";
 
 const TAGS = ["Forms"];
 
@@ -115,14 +117,29 @@ export const formRouter = router({
       return { message: "Form deleted successfully" };
     }),
 
-  getBySlug: publicProcedure
+    getBySlug: publicProcedure
     .meta({ openapi: { method: "GET", path: "/forms/{slug}", tags: TAGS } })
     .input(z.object({ slug: z.string() }))
     .output(z.any())
     .query(async ({ input }) => {
       const form = await getFormBySlug(input.slug);
       if (!form) throw formNotFound();
-      return form;
+
+      const fields = await db
+        .select()
+        .from(formFieldsTable)
+        .where(
+          and(
+            eq(formFieldsTable.formId, form.id),
+            eq(formFieldsTable.isActive, true)
+          )
+        )
+        .orderBy(asc(formFieldsTable.order));
+
+      return {
+        ...form,
+        fields,
+      };
     }),
 
   getPublicForms: publicProcedure

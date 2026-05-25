@@ -4,31 +4,38 @@ import { useState } from "react"
 import { useParams } from "next/navigation"
 import { trpc } from "~/trpc/client"
 
-/* ── TYPES ─────────────────────────────────────────────── */
-type FieldType = "text" | "email" | "number" | "textarea" | "select" |
-                 "checkbox" | "radio" | "rating" | "date"
+type FieldType =
+  | "text"
+  | "email"
+  | "number"
+  | "textarea"
+  | "select"
+  | "checkbox"
+  | "radio"
+  | "rating"
+  | "date"
 
 interface FormField {
   id: string
   type: FieldType
   label: string
-  placeholder?: string
-  required: boolean
-  options?: string[]
+  placeholder?: string | null
+  required: boolean | null
+  options?: string[] | null
 }
 
 interface FormData {
   id: string
   title: string
-  description?: string
-  accentColor?: string
-  successMessage?: string
-  formFields: FormField[]
+  description?: string | null
+  accentColor?: string | null
+  successMessage?: string | null
+  fields: FormField[]
 }
 
-/* ── PAGE ───────────────────────────────────────────────── */
 export default function PublicFormPage() {
   const { slug } = useParams<{ slug: string }>()
+
   const { data: form, isLoading, error } = trpc.form.getBySlug.useQuery(
     { slug },
     { retry: false }
@@ -40,7 +47,6 @@ export default function PublicFormPage() {
   return <FormFiller form={form as unknown as FormData} slug={slug} />
 }
 
-/* ── FORM FILLER ────────────────────────────────────────── */
 function FormFiller({ form, slug }: { form: FormData; slug: string }) {
   const [answers, setAnswers] = useState<Record<string, unknown>>({})
   const [submitted, setSubmitted] = useState(false)
@@ -60,14 +66,20 @@ function FormFiller({ form, slug }: { form: FormData; slug: string }) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Validate required fields
     const newErrors: Record<string, string> = {}
-    form.formFields?.forEach(field => {
-      if (field.required) {
-        const val = answers[field.id]
-        if (!val || (Array.isArray(val) && val.length === 0) || val === "") {
-          newErrors[field.id] = "This field is required"
-        }
+
+    form.fields?.forEach(field => {
+      if (!field.required) return
+
+      const val = answers[field.id]
+      const isMissing =
+        val === undefined ||
+        val === null ||
+        val === "" ||
+        (Array.isArray(val) && val.length === 0)
+
+      if (isMissing) {
+        newErrors[field.id] = "This field is required"
       }
     })
 
@@ -78,72 +90,94 @@ function FormFiller({ form, slug }: { form: FormData; slug: string }) {
 
     submit.mutate({
       formSlug: slug,
-      answers: answers as Record<string, string>,
+      answers,
       respondentEmail: respondentEmail || undefined,
     })
   }
 
-  if (submitted) return <SuccessScreen message={form.successMessage} />
+  if (submitted) return <SuccessScreen message={form.successMessage ?? undefined} />
 
   return (
     <div style={{
       minHeight: "100vh",
       background: "#080808",
-      display: "flex", flexDirection: "column",
+      display: "flex",
+      flexDirection: "column",
       alignItems: "center",
       padding: "60px 24px 100px",
     }}>
-      {/* Brand bar */}
       <div style={{
-        position: "fixed", top: 0, left: 0, right: 0,
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
         height: 48,
         background: "rgba(8,8,8,0.9)",
         backdropFilter: "blur(12px)",
         borderBottom: "1px solid rgba(255,255,255,0.06)",
-        display: "flex", alignItems: "center",
+        display: "flex",
+        alignItems: "center",
         justifyContent: "space-between",
-        padding: "0 32px", zIndex: 50,
+        padding: "0 32px",
+        zIndex: 50,
       }}>
         <span style={{
-          fontFamily: "var(--font-display)", fontWeight: 700,
-          fontSize: 14, color: "var(--cream)", letterSpacing: "-0.02em",
-        }}>Formulate</span>
+          fontFamily: "var(--font-display)",
+          fontWeight: 700,
+          fontSize: 14,
+          color: "var(--cream)",
+          letterSpacing: "-0.02em",
+        }}>
+          Formulate
+        </span>
         <span style={{
-          fontSize: 12, color: "rgba(255,255,255,0.3)",
+          fontSize: 12,
+          color: "rgba(255,255,255,0.3)",
           fontFamily: "var(--font-body)",
-        }}>Powered by Formulate</span>
+        }}>
+          Powered by Formulate
+        </span>
       </div>
 
-      {/* Form card */}
       <div style={{
-        width: "100%", maxWidth: 640,
+        width: "100%",
+        maxWidth: 640,
         marginTop: 48,
       }}>
-        {/* Header */}
         <div style={{ marginBottom: 40 }}>
           <h1 style={{
-            fontFamily: "var(--font-display)", fontWeight: 800,
+            fontFamily: "var(--font-display)",
+            fontWeight: 800,
             fontSize: "clamp(24px, 4vw, 36px)",
-            color: "var(--cream)", letterSpacing: "-0.03em",
+            color: "var(--cream)",
+            letterSpacing: "-0.03em",
             marginBottom: 10,
-          }}>{form.title}</h1>
+          }}>
+            {form.title}
+          </h1>
+
           {form.description && (
             <p style={{
-              fontSize: 15, color: "rgba(255,255,255,0.45)",
-              fontFamily: "var(--font-body)", lineHeight: 1.7,
-            }}>{form.description}</p>
+              fontSize: 15,
+              color: "rgba(255,255,255,0.45)",
+              fontFamily: "var(--font-body)",
+              lineHeight: 1.7,
+            }}>
+              {form.description}
+            </p>
           )}
+
           <div style={{
-            height: 2, marginTop: 24,
+            height: 2,
+            marginTop: 24,
             background: "linear-gradient(90deg, var(--lime) 0%, transparent 100%)",
             opacity: 0.4,
-          }}/>
+          }} />
         </div>
 
-        {/* Fields */}
         <form onSubmit={handleSubmit}>
           <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-            {form.formFields?.map(field => (
+            {form.fields?.map(field => (
               <FormFieldInput
                 key={field.id}
                 field={field}
@@ -154,21 +188,23 @@ function FormFiller({ form, slug }: { form: FormData; slug: string }) {
             ))}
           </div>
 
-          {/* Respondent email — optional */}
           <div style={{
             marginTop: 32,
             padding: "20px 0",
             borderTop: "1px solid rgba(255,255,255,0.06)",
           }}>
             <label style={{
-              fontSize: 13, fontWeight: 600,
+              fontSize: 13,
+              fontWeight: 600,
               color: "rgba(255,255,255,0.4)",
               fontFamily: "var(--font-display)",
-              display: "block", marginBottom: 8,
+              display: "block",
+              marginBottom: 8,
               letterSpacing: "0.02em",
             }}>
-              Your email (optional — to receive a copy)
+              Your email (optional - to receive a copy)
             </label>
+
             <input
               type="email"
               value={respondentEmail}
@@ -178,31 +214,37 @@ function FormFiller({ form, slug }: { form: FormData; slug: string }) {
                 width: "100%",
                 background: "rgba(255,255,255,0.04)",
                 border: "1px solid rgba(255,255,255,0.08)",
-                borderRadius: 8, padding: "11px 14px",
-                color: "var(--cream)", fontSize: 14,
-                fontFamily: "var(--font-body)", outline: "none",
+                borderRadius: 8,
+                padding: "11px 14px",
+                color: "var(--cream)",
+                fontSize: 14,
+                fontFamily: "var(--font-body)",
+                outline: "none",
               }}
               onFocus={e => e.currentTarget.style.borderColor = "rgba(184,255,53,0.3)"}
               onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"}
             />
           </div>
 
-          {/* Submit */}
           <button
             type="submit"
             disabled={submit.isPending}
             style={{
-              width: "100%", marginTop: 8,
+              width: "100%",
+              marginTop: 8,
               padding: "14px",
               background: submit.isPending ? "rgba(184,255,53,0.5)" : "var(--lime)",
               color: "#000",
-              border: "none", borderRadius: 10,
-              fontFamily: "var(--font-display)", fontWeight: 700,
-              fontSize: 15, cursor: submit.isPending ? "not-allowed" : "pointer",
+              border: "none",
+              borderRadius: 10,
+              fontFamily: "var(--font-display)",
+              fontWeight: 700,
+              fontSize: 15,
+              cursor: submit.isPending ? "not-allowed" : "pointer",
               transition: "opacity .15s",
             }}
           >
-            {submit.isPending ? "Submitting..." : "Submit →"}
+            {submit.isPending ? "Submitting..." : "Submit"}
           </button>
         </form>
       </div>
@@ -210,7 +252,6 @@ function FormFiller({ form, slug }: { form: FormData; slug: string }) {
   )
 }
 
-/* ── FIELD INPUT ────────────────────────────────────────── */
 function FormFieldInput({ field, value, error, onChange }: {
   field: FormField
   value: unknown
@@ -221,19 +262,24 @@ function FormFieldInput({ field, value, error, onChange }: {
     width: "100%",
     background: "rgba(255,255,255,0.04)",
     border: `1px solid ${error ? "rgba(248,113,113,0.5)" : "rgba(255,255,255,0.08)"}`,
-    borderRadius: 8, padding: "11px 14px",
-    color: "var(--cream)", fontSize: 14,
-    fontFamily: "var(--font-body)", outline: "none",
+    borderRadius: 8,
+    padding: "11px 14px",
+    color: "var(--cream)",
+    fontSize: 14,
+    fontFamily: "var(--font-body)",
+    outline: "none",
     transition: "border-color .15s",
   }
 
   return (
     <div>
-      {/* Label */}
       <label style={{
-        display: "block", marginBottom: 8,
-        fontSize: 14, fontWeight: 600,
-        color: "var(--cream)", fontFamily: "var(--font-display)",
+        display: "block",
+        marginBottom: 8,
+        fontSize: 14,
+        fontWeight: 600,
+        color: "var(--cream)",
+        fontFamily: "var(--font-display)",
       }}>
         {field.label}
         {field.required && (
@@ -241,12 +287,11 @@ function FormFieldInput({ field, value, error, onChange }: {
         )}
       </label>
 
-      {/* Input by type */}
       {field.type === "textarea" && (
         <textarea
           value={(value as string) ?? ""}
           onChange={e => onChange(e.target.value)}
-          placeholder={field.placeholder}
+          placeholder={field.placeholder ?? undefined}
           rows={4}
           style={{ ...inputBase, resize: "vertical" }}
           onFocus={e => e.currentTarget.style.borderColor = "rgba(184,255,53,0.3)"}
@@ -254,13 +299,22 @@ function FormFieldInput({ field, value, error, onChange }: {
         />
       )}
 
-      {(field.type === "text" || field.type === "email" ||
-        field.type === "number" || field.type === "date") && (
+      {(field.type === "text" ||
+        field.type === "email" ||
+        field.type === "number" ||
+        field.type === "date") && (
         <input
           type={field.type}
-          value={(value as string) ?? ""}
-          onChange={e => onChange(e.target.value)}
-          placeholder={field.placeholder}
+          value={(value as string | number) ?? ""}
+          onChange={e => {
+            if (field.type === "number") {
+              onChange(e.target.value === "" ? "" : Number(e.target.value))
+              return
+            }
+
+            onChange(e.target.value)
+          }}
+          placeholder={field.placeholder ?? undefined}
           style={inputBase}
           onFocus={e => e.currentTarget.style.borderColor = "rgba(184,255,53,0.3)"}
           onBlur={e => e.currentTarget.style.borderColor = error ? "rgba(248,113,113,0.5)" : "rgba(255,255,255,0.08)"}
@@ -284,22 +338,32 @@ function FormFieldInput({ field, value, error, onChange }: {
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {field.options?.map(opt => (
             <label key={opt} style={{
-              display: "flex", alignItems: "center", gap: 10,
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
               cursor: "pointer",
             }}>
               <div style={{
-                width: 18, height: 18, borderRadius: "50%",
+                width: 18,
+                height: 18,
+                borderRadius: "50%",
                 border: `2px solid ${value === opt ? "var(--lime)" : "rgba(255,255,255,0.2)"}`,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                flexShrink: 0, transition: "border-color .15s",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+                transition: "border-color .15s",
               }}>
                 {value === opt && (
                   <div style={{
-                    width: 8, height: 8, borderRadius: "50%",
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
                     background: "var(--lime)",
-                  }}/>
+                  }} />
                 )}
               </div>
+
               <input
                 type="radio"
                 name={field.id}
@@ -308,10 +372,14 @@ function FormFieldInput({ field, value, error, onChange }: {
                 onChange={() => onChange(opt)}
                 style={{ display: "none" }}
               />
+
               <span style={{
-                fontSize: 14, color: "var(--cream-dim)",
+                fontSize: 14,
+                color: "var(--cream-dim)",
                 fontFamily: "var(--font-body)",
-              }}>{opt}</span>
+              }}>
+                {opt}
+              </span>
             </label>
           ))}
         </div>
@@ -323,18 +391,28 @@ function FormFieldInput({ field, value, error, onChange }: {
             const checked = Array.isArray(value) && (value as string[]).includes(opt)
             return (
               <label key={opt} style={{
-                display: "flex", alignItems: "center", gap: 10,
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
                 cursor: "pointer",
               }}>
                 <div style={{
-                  width: 18, height: 18, borderRadius: 4,
+                  width: 18,
+                  height: 18,
+                  borderRadius: 4,
                   border: `2px solid ${checked ? "var(--lime)" : "rgba(255,255,255,0.2)"}`,
                   background: checked ? "var(--lime)" : "transparent",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  flexShrink: 0, transition: "all .15s",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                  transition: "all .15s",
                 }}>
-                  {checked && <span style={{ fontSize: 11, color: "#000", fontWeight: 700 }}>✓</span>}
+                  {checked && (
+                    <span style={{ fontSize: 11, color: "#000", fontWeight: 700 }}>✓</span>
+                  )}
                 </div>
+
                 <input
                   type="checkbox"
                   checked={checked}
@@ -344,10 +422,14 @@ function FormFieldInput({ field, value, error, onChange }: {
                   }}
                   style={{ display: "none" }}
                 />
+
                 <span style={{
-                  fontSize: 14, color: "var(--cream-dim)",
+                  fontSize: 14,
+                  color: "var(--cream-dim)",
                   fontFamily: "var(--font-body)",
-                }}>{opt}</span>
+                }}>
+                  {opt}
+                </span>
               </label>
             )
           })}
@@ -362,49 +444,64 @@ function FormFieldInput({ field, value, error, onChange }: {
               type="button"
               onClick={() => onChange(n)}
               style={{
-                fontSize: 28, background: "transparent",
-                border: "none", cursor: "pointer",
-                color: (value as number) >= n ? "#facc15" : "rgba(255,255,255,0.15)",
+                fontSize: 28,
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                color: typeof value === "number" && value >= n ? "#facc15" : "rgba(255,255,255,0.15)",
                 transition: "color .15s, transform .1s",
                 padding: 0,
               }}
               onMouseEnter={e => e.currentTarget.style.transform = "scale(1.2)"}
               onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
-            >★</button>
+            >
+              ★
+            </button>
           ))}
         </div>
       )}
 
-      {/* Error message */}
       {error && (
         <p style={{
-          marginTop: 6, fontSize: 12,
-          color: "#f87171", fontFamily: "var(--font-body)",
-        }}>{error}</p>
+          marginTop: 6,
+          fontSize: 12,
+          color: "#f87171",
+          fontFamily: "var(--font-body)",
+        }}>
+          {error}
+        </p>
       )}
     </div>
   )
 }
 
-/* ── SCREENS ────────────────────────────────────────────── */
 function LoadingScreen() {
   return (
     <div style={{
-      minHeight: "100vh", background: "#080808",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      flexDirection: "column", gap: 16,
+      minHeight: "100vh",
+      background: "#080808",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      flexDirection: "column",
+      gap: 16,
     }}>
       <div style={{
-        width: 36, height: 36, borderRadius: "50%",
+        width: 36,
+        height: 36,
+        borderRadius: "50%",
         border: "2px solid rgba(255,255,255,0.06)",
         borderTop: "2px solid var(--lime)",
         animation: "spin 0.8s linear infinite",
-      }}/>
+      }} />
       <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
       <span style={{
-        fontSize: 14, color: "rgba(255,255,255,0.3)",
+        fontSize: 14,
+        color: "rgba(255,255,255,0.3)",
         fontFamily: "var(--font-body)",
-      }}>Loading form...</span>
+      }}>
+        Loading form...
+      </span>
     </div>
   )
 }
@@ -412,18 +509,31 @@ function LoadingScreen() {
 function NotFoundScreen() {
   return (
     <div style={{
-      minHeight: "100vh", background: "#080808",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      flexDirection: "column", gap: 12, textAlign: "center", padding: 40,
+      minHeight: "100vh",
+      background: "#080808",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      flexDirection: "column",
+      gap: 12,
+      textAlign: "center",
+      padding: 40,
     }}>
       <div style={{ fontSize: 48, marginBottom: 8 }}>◈</div>
       <h1 style={{
-        fontFamily: "var(--font-display)", fontWeight: 800,
-        fontSize: 24, color: "var(--cream)", letterSpacing: "-0.03em",
-      }}>Form not found</h1>
+        fontFamily: "var(--font-display)",
+        fontWeight: 800,
+        fontSize: 24,
+        color: "var(--cream)",
+        letterSpacing: "-0.03em",
+      }}>
+        Form not found
+      </h1>
       <p style={{
-        fontSize: 15, color: "rgba(255,255,255,0.4)",
-        fontFamily: "var(--font-body)", maxWidth: 360,
+        fontSize: 15,
+        color: "rgba(255,255,255,0.4)",
+        fontFamily: "var(--font-body)",
+        maxWidth: 360,
       }}>
         This form doesn't exist, has been unpublished, or the link is incorrect.
       </p>
@@ -434,34 +544,61 @@ function NotFoundScreen() {
 function SuccessScreen({ message }: { message?: string }) {
   return (
     <div style={{
-      minHeight: "100vh", background: "#080808",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      flexDirection: "column", gap: 16, textAlign: "center", padding: 40,
+      minHeight: "100vh",
+      background: "#080808",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      flexDirection: "column",
+      gap: 16,
+      textAlign: "center",
+      padding: 40,
     }}>
       <div style={{
-        width: 64, height: 64, borderRadius: "50%",
+        width: 64,
+        height: 64,
+        borderRadius: "50%",
         background: "rgba(184,255,53,0.1)",
         border: "2px solid rgba(184,255,53,0.3)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 28, marginBottom: 8,
-      }}>✓</div>
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: 28,
+        marginBottom: 8,
+      }}>
+        ✓
+      </div>
       <h1 style={{
-        fontFamily: "var(--font-display)", fontWeight: 800,
-        fontSize: 28, color: "var(--cream)", letterSpacing: "-0.03em",
-      }}>Response submitted!</h1>
+        fontFamily: "var(--font-display)",
+        fontWeight: 800,
+        fontSize: 28,
+        color: "var(--cream)",
+        letterSpacing: "-0.03em",
+      }}>
+        Response submitted!
+      </h1>
       <p style={{
-        fontSize: 15, color: "rgba(255,255,255,0.45)",
-        fontFamily: "var(--font-body)", maxWidth: 400, lineHeight: 1.7,
+        fontSize: 15,
+        color: "rgba(255,255,255,0.45)",
+        fontFamily: "var(--font-body)",
+        maxWidth: 400,
+        lineHeight: 1.7,
       }}>
         {message ?? "Thank you for your response. It has been recorded successfully."}
       </p>
       <a href="/" style={{
         marginTop: 8,
-        display: "inline-flex", alignItems: "center", gap: 6,
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
         padding: "10px 24px",
-        background: "var(--lime)", color: "#000",
-        fontFamily: "var(--font-display)", fontWeight: 700,
-        fontSize: 13, textDecoration: "none", borderRadius: 8,
+        background: "var(--lime)",
+        color: "#000",
+        fontFamily: "var(--font-display)",
+        fontWeight: 700,
+        fontSize: 13,
+        textDecoration: "none",
+        borderRadius: 8,
       }}>
         Back to Formulate
       </a>

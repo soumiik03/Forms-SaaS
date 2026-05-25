@@ -24,7 +24,7 @@ export default function DashboardPage() {
             fontSize: 28, color: "var(--cream)", letterSpacing: "-0.04em",
             marginBottom: 6,
           }}>
-            {me ? `Hey, ${me.fullName.split(" ")[0]} 👋` : "Dashboard"}
+            {me ? `Hey, ${me.fullName.split(" ")[0]}` : "Dashboard"}
           </h1>
           <p style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", fontFamily: "var(--font-body)" }}>
             Here's what's happening with your forms today.
@@ -51,10 +51,10 @@ export default function DashboardPage() {
         gap: 16, marginBottom: 40,
       }}>
         {[
-          { label: "Total Forms",   value: forms?.length ?? 0,     color: "var(--cream)",        loading: isLoading },
-          { label: "Live Forms",    value: publishedForms.length,   color: "var(--lime)",         loading: isLoading },
-          { label: "Responses",     value: totalResponses,          color: "#60a5fa",             loading: isLoading },
-          { label: "Completion",    value: "—",                     color: "rgba(255,255,255,0.4)", loading: false },
+          { label: "Total Forms", value: forms?.length ?? 0, color: "var(--cream)", loading: isLoading },
+          { label: "Live Forms", value: publishedForms.length, color: "var(--lime)", loading: isLoading },
+          { label: "Responses", value: totalResponses, color: "#60a5fa", loading: isLoading },
+          { label: "Completion", value: "-", color: "rgba(255,255,255,0.4)", loading: false },
         ].map(s => (
           <StatCard key={s.label} {...s} />
         ))}
@@ -78,7 +78,7 @@ export default function DashboardPage() {
           onMouseEnter={e => e.currentTarget.style.color = "var(--cream)"}
           onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.4)"}
           >
-            View all →
+            View all
           </Link>
         </div>
 
@@ -94,12 +94,12 @@ export default function DashboardPage() {
             {/* Table header */}
             <div style={{
               display: "grid",
-              gridTemplateColumns: "1fr 120px 100px 120px 80px",
+              gridTemplateColumns: "1fr 120px 100px 120px 170px",
               padding: "10px 20px",
               background: "rgba(255,255,255,0.02)",
               borderBottom: "1px solid rgba(255,255,255,0.06)",
             }}>
-              {["Form", "Visibility", "Responses", "Created", ""].map(h => (
+              {["Form", "Visibility", "Responses", "Created", "Actions"].map(h => (
                 <div key={h} style={{
                   fontSize: 11, fontWeight: 600,
                   color: "rgba(255,255,255,0.3)",
@@ -114,7 +114,7 @@ export default function DashboardPage() {
               <FormRow
                 key={form.id}
                 form={form}
-                isLast={i === (forms?.length ?? 0) - 1}
+                isLast={i === Math.min(forms.length, 8) - 1}
               />
             ))}
           </div>
@@ -124,7 +124,6 @@ export default function DashboardPage() {
   )
 }
 
-/* ── STAT CARD ─────────────────────────────────────────── */
 function StatCard({ label, value, color, loading }: {
   label: string; value: number | string; color: string; loading: boolean
 }) {
@@ -148,21 +147,31 @@ function StatCard({ label, value, color, loading }: {
         opacity: loading ? 0.3 : 1,
         transition: "opacity .3s",
       }}>
-        {loading ? "—" : value}
+        {loading ? "-" : value}
       </div>
     </div>
   )
 }
 
-/* ── FORM ROW ──────────────────────────────────────────── */
 function FormRow({ form, isLast }: { form: any; isLast: boolean }) {
   const [hov, setHov] = useState(false)
   const isLive = form.status === "published"
 
+  const copyLink = async () => {
+    const url = `${window.location.origin}/f/${form.slug}`
+
+    try {
+      await navigator.clipboard.writeText(url)
+      alert("Link copied!")
+    } catch {
+      window.prompt("Copy this form link:", url)
+    }
+  }
+
   return (
     <div style={{
       display: "grid",
-      gridTemplateColumns: "1fr 120px 100px 120px 80px",
+      gridTemplateColumns: "1fr 120px 100px 120px 170px",
       padding: "14px 20px",
       alignItems: "center",
       borderBottom: isLast ? "none" : "1px solid rgba(255,255,255,0.04)",
@@ -226,11 +235,28 @@ function FormRow({ form, isLast }: { form: any; isLast: boolean }) {
       }}>
         {form.createdAt
           ? new Date(form.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })
-          : "—"}
+          : "-"}
       </div>
 
       {/* Actions */}
-      <div style={{ display: "flex", gap: 8 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <button
+          type="button"
+          onClick={copyLink}
+          style={{
+            fontSize: 12,
+            color: "rgba(255,255,255,0.35)",
+            background: "transparent",
+            padding: "4px 10px",
+            borderRadius: 6,
+            border: "1px solid rgba(255,255,255,0.08)",
+            cursor: "pointer",
+            fontFamily: "var(--font-display)",
+          }}
+        >
+          Copy link
+        </button>
+
         <Link href={`/dashboard/forms/${form.id}`} style={{
           fontSize: 12, color: "rgba(255,255,255,0.35)",
           textDecoration: "none", fontFamily: "var(--font-display)",
@@ -252,7 +278,6 @@ function FormRow({ form, isLast }: { form: any; isLast: boolean }) {
   )
 }
 
-/* ── EMPTY STATE ───────────────────────────────────────── */
 function EmptyState() {
   return (
     <div style={{
@@ -285,7 +310,6 @@ function EmptyState() {
   )
 }
 
-/* ── LOADING SKELETON ──────────────────────────────────── */
 function LoadingSkeleton() {
   return (
     <div style={{
